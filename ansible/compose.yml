@@ -7,4 +7,8 @@ services:
     build: .
     ports:
       - "5002:22"
+  db:
+    build: .
+    ports:
+      - "6001:22"
 
