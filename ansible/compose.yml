@@ -1,0 +1,10 @@
+services:
+  web1:
+    build: .
+    ports:
+      - "5001:22"
+  web2:
+    build: .
+    ports:
+      - "5002:22"
+
