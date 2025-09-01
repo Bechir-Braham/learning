@@ -1,0 +1,66 @@
+(checkKeys)
+  @KBD
+  D=M 
+  @WHITE
+  D;JEQ 
+  @BLACK
+  0;JMP
+
+
+(WHITE)
+@1
+M=0
+@8192
+D=A
+@0
+M=D
+(LOOPy)
+@0
+D=M
+@END
+D;JEQ
+@SCREEN
+D=A
+@1
+D=D+M
+A=D
+M=0
+@1
+M=M+1
+@0
+M=M-1
+@LOOPy
+0;JMP
+(END)
+@checkKeys
+0;JMP
+
+
+
+(BLACK)
+@1
+M=0
+@8192
+D=A
+@0
+M=D
+(LOOPz)
+@0
+D=M
+@END
+D;JEQ
+@SCREEN
+D=A
+@1
+D=D+M
+A=D
+M=-1
+@1
+M=M+1
+@0
+M=M-1
+@LOOPz
+0;JMP
+(END)
+@checkKeys
+0;JMP
