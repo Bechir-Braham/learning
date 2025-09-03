@@ -50,7 +50,6 @@ func Worker(mapf func(string, string) []KeyValue,
 			if !reply.Ack {
 				log.Fatalf("Worker %d failed to report reduce task %s done: %v", workerID, task.TaskID, reply)
 			}
-
 		}
 		if task.TaskType == "wait" {
 			time.Sleep(1 * time.Second)
