@@ -116,35 +116,49 @@ func get_pending_map_job(m *Master) *MapJob {
 	return nil
 }
 
-// func apJobInput.TaskID == args.TaskID {
-// 				// Mark the job as done by removing it from submitted_map_jobs
-// 				m.submitted_map_jobs = append(m.submitted_map_jobs[:i], m.submitted_map_jobs[i+1:]...)
-// 				fmt.Printf("[%d] Map task %v completed\n", job.WorkerID, job.MapJobInput.TaskID)
-// 				break
-// 			}
-// 		}
-// 		if len(m.map_jobs) == 0 && len(m.submitted_map_jobs) == 0 {
-// 			m.isMapDone = true
-// 		}
-// 		reply.Ack = true
-// 	}
-// 	if m.isMapDone && !m.isReduceDone {
-// 		for i, job := range m.submitted_reduce_jobs {
-// 			if job.ReduceJobInput.TaskID == args.TaskID {
+func (m *Master) ControlTaskDone(args *TaskDoneArgs, reply *TaskDoneReply) error {
+	if !m.isMapDone {
+		return m.handleMapTaskDone(args, reply)
+	}
+	if m.isMapDone && !m.isReduceDone {
+		return m.handleReduceTaskDone(args, reply)
+	}
+	return nil
+}
 
-// 				// Mark the job as done by removing it from submitted_reduce_jobs
-// 				m.submitted_reduce_jobs = append(m.submitted_reduce_jobs[:i], m.submitted_reduce_jobs[i+1:]...)
-// 				fmt.Printf("[%d] Reduce task %v completed\n", job.WorkerID, job.ReduceJobInput.TaskID)
-// 				break
-// 			}
-// 		}
-// 		if len(m.reduce_jobs) == 0 && len(m.submitted_reduce_jobs) == 0 {
-// 			m.isReduceDone = true
-// 		}
-// 		reply.Ack = true
-// 	}
-// 	return nil
-// }
+func (m *Master) handleReduceTaskDone(args *TaskDoneArgs, reply *TaskDoneReply) error {
+	m.jobLock.Lock()
+	defer m.jobLock.Unlock()
+	areAllJobsDone := true
+	for i := range m.reduce_jobs {
+		job := &m.reduce_jobs[i]
+		if job.ReduceJobInput.TaskID == args.TaskID {
+			job.state = "done"
+			fmt.Printf("[%d] Reduce task %v completed\n", job.WorkerID, job.ReduceJobInput.TaskID)
+		}
+		areAllJobsDone = areAllJobsDone && (job.state == "done")
+	}
+	m.isReduceDone = areAllJobsDone
+	reply.Ack = true
+	return nil
+}
+
+func (m *Master) handleMapTaskDone(args *TaskDoneArgs, reply *TaskDoneReply) error {
+	m.jobLock.Lock()
+	defer m.jobLock.Unlock()
+	areAllJobsDone := true
+	for i := range m.map_jobs {
+		job := &m.map_jobs[i]
+		if job.MapJobInput.TaskID == args.TaskID {
+			job.state = "done"
+			fmt.Printf("[%d] Map task %v completed\n", job.WorkerID, job.MapJobInput.TaskID)
+		}
+		areAllJobsDone = areAllJobsDone && (job.state == "done")
+	}
+	m.isMapDone = areAllJobsDone
+	reply.Ack = true
+	return nil
+}
 
 // start a thread that listens for RPCs from worker.go
 func (m *Master) server() {
