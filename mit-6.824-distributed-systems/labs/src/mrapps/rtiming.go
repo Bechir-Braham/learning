@@ -9,7 +9,6 @@ package main
 
 import (
 	"fmt"
-	"io/io"
 	"mit-6824-labs/mr"
 	"os"
 	"syscall"
@@ -21,7 +20,7 @@ func nparallel(phase string) int {
 	// we're running at the same time as them.
 	pid := os.Getpid()
 	myfilename := fmt.Sprintf("mr-worker-%s-%d", phase, pid)
-	err := io.WriteFile(myfilename, []byte("x"), 0666)
+	err := os.WriteFile(myfilename, []byte("x"), 0666)
 	if err != nil {
 		panic(err)
 	}

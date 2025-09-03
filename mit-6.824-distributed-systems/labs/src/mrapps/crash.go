@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"6.824/mr"
+	"mit-6824-labs/mr"
 )
 
 func maybeCrash() {

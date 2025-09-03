@@ -12,7 +12,7 @@ import (
 	"strings"
 	"unicode"
 
-	"6.824/mr"
+	"mit-6824-labs/mr"
 )
 
 // The mapping function is called once for each piece of the input.
