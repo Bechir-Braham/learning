@@ -15,12 +15,14 @@ type MapJob struct {
 	MapJobInput MapJobInput
 	WorkerID    int
 	state       string // "started" or "done" or "failed" or "pending"
+	startedAt   time.Time
 }
 
 type ReduceJob struct {
 	ReduceJobInput ReduceJobInput
 	WorkerID       int
 	state          string // "started" or "done" or "failed" or "pending"
+	startedAt      time.Time
 }
 
 type MapJobInput struct {
@@ -67,6 +69,7 @@ func (m *Master) handleReduceTaskRequest(args *TaskRequestArgs, reply *TaskReque
 	// Assign the job to the worker
 	job.state = "in-progress"
 	job.WorkerID = args.ID
+	job.startedAt = time.Now()
 
 	reply.TaskType = "reduce"
 	reply.TaskID = job.ReduceJobInput.TaskID
@@ -97,6 +100,7 @@ func (m *Master) handleMapTaskRequest(args *TaskRequestArgs, reply *TaskRequestR
 	// Assign the job to the worker
 	job.state = "in-progress"
 	job.WorkerID = args.ID
+	job.startedAt = time.Now()
 
 	reply.TaskType = "map"
 	reply.TaskID = job.MapJobInput.TaskID
@@ -220,6 +224,7 @@ func MakeMaster(files []string, nReduce int) *Master {
 			break
 		}
 		time.Sleep(100 * time.Millisecond)
+		handle_timeout_map_jobs(&m)
 	}
 	fmt.Print("Map phase done\n")
 	for {
@@ -228,8 +233,39 @@ func MakeMaster(files []string, nReduce int) *Master {
 			break
 		}
 		time.Sleep(100 * time.Millisecond)
+		handle_timeout_reduce_jobs(&m)
 	}
 	fmt.Print("Reduce phase done\n")
 
 	return &m
+}
+
+func handle_timeout_reduce_jobs(master *Master) {
+	master.jobLock.Lock()
+	defer master.jobLock.Unlock()
+	for i := range master.reduce_jobs {
+		job := &master.reduce_jobs[i]
+		if job.state == "in-progress" {
+			if time.Since(job.startedAt) > 10*time.Second {
+				fmt.Printf("Reduce task %s timed out. Reassigning...\n", job.ReduceJobInput.TaskID)
+				job.state = "pending"
+				job.WorkerID = 0
+			}
+		}
+	}
+}
+
+func handle_timeout_map_jobs(master *Master) {
+	master.jobLock.Lock()
+	defer master.jobLock.Unlock()
+	for i := range master.map_jobs {
+		job := &master.map_jobs[i]
+		if job.state == "in-progress" {
+			if time.Since(job.startedAt) > 10*time.Second {
+				fmt.Printf("Map task %s timed out. Reassigning...\n", job.MapJobInput.TaskID)
+				job.state = "pending"
+				job.WorkerID = 0
+			}
+		}
+	}
 }
